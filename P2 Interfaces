@@ -48,7 +48,7 @@ void setup() {
 
 void loop() {
 
-  // 🔵 CONTROL DESDE APP (Bluetooth)
+  //  CONTROL DESDE APP (Bluetooth)
   if (BT.available()) {
     char dato = BT.read();
 
@@ -57,7 +57,7 @@ void loop() {
     if (dato == 'a') {
       hab1 = false;
       estado1 = false;
-      last1 = HIGH; // 🔥 mejora
+      last1 = HIGH; // 
     }
 
     // BTN2
@@ -85,7 +85,7 @@ void loop() {
     }
   }
 
-  // 🔴 BOTONES (cada uno independiente)
+  //  BOTONES (cada uno independiente)
 
   bool b1 = digitalRead(btn1);
   if (hab1 && last1 == HIGH && b1 == LOW) {
