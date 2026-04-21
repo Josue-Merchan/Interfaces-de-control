@@ -3,117 +3,82 @@
 BluetoothSerial BT;
 
 // LEDs
-int led1 = 2;
-int led2 = 4;
-int led3 = 5;
-int led4 = 18;
+const int leds[4] = {2, 4, 5, 18};
 
 // Botones
-int btn1 = 12;
-int btn2 = 13;
-int btn3 = 14;
-int btn4 = 27;
+const int botones[4] = {12, 13, 14, 27};
 
-// Estados LEDs
-bool estado1 = false;
-bool estado2 = false;
-bool estado3 = false;
-bool estado4 = false;
+// Estados
+bool estado[4] = {false, false, false, false};
 
-// Habilitación individual
-bool hab1 = false;
-bool hab2 = false;
-bool hab3 = false;
-bool hab4 = false;
+// Estado anterior (para detectar pulsación)
+bool lastBtn[4] = {HIGH, HIGH, HIGH, HIGH};
 
-// Lectura anterior (antirrebote)
-bool last1 = HIGH;
-bool last2 = HIGH;
-bool last3 = HIGH;
-bool last4 = HIGH;
+// Letras Bluetooth
+char encender[4] = {'A','B','C','D'};
+char apagar[4]   = {'a','b','c','d'};
 
 void setup() {
-  BT.begin("ESP32_BT"); // Nombre del Bluetooth
+  BT.begin("ESP32_BT");
+  Serial.begin(115200);
 
-  pinMode(led1, OUTPUT);
-  pinMode(led2, OUTPUT);
-  pinMode(led3, OUTPUT);
-  pinMode(led4, OUTPUT);
+  for (int i = 0; i < 4; i++) {
+    pinMode(leds[i], OUTPUT);
+    pinMode(botones[i], INPUT_PULLUP);
+  }
+}
 
-  pinMode(btn1, INPUT_PULLUP);
-  pinMode(btn2, INPUT_PULLUP);
-  pinMode(btn3, INPUT_PULLUP);
-  pinMode(btn4, INPUT_PULLUP);
+//  Enviar estado a la app
+void enviarEstado(int i) {
+  if (estado[i]) {
+    BT.write(encender[i]);
+  } else {
+    BT.write(apagar[i]);
+  }
+}
+
+//  Leer botón (antirrebote REAL)
+void leerBoton(int i) {
+  bool lectura = digitalRead(botones[i]);
+
+  // Detecta flanco de bajada (cuando presionas)
+  if (lastBtn[i] == HIGH && lectura == LOW) {
+    delay(50); // antirrebote simple pero efectivo
+
+    if (digitalRead(botones[i]) == LOW) {
+      estado[i] = !estado[i];
+      enviarEstado(i);
+    }
+  }
+
+  lastBtn[i] = lectura;
 }
 
 void loop() {
 
-  //  CONTROL DESDE APP (Bluetooth)
+  //  CONTROL BLUETOOTH
   if (BT.available()) {
     char dato = BT.read();
 
-    // BTN1
-    if (dato == 'A') hab1 = true;
-    if (dato == 'a') {
-      hab1 = false;
-      estado1 = false;
-      last1 = HIGH; // 
-    }
-
-    // BTN2
-    if (dato == 'B') hab2 = true;
-    if (dato == 'b') {
-      hab2 = false;
-      estado2 = false;
-      last2 = HIGH;
-    }
-
-    // BTN3
-    if (dato == 'C') hab3 = true;
-    if (dato == 'c') {
-      hab3 = false;
-      estado3 = false;
-      last3 = HIGH;
-    }
-
-    // BTN4
-    if (dato == 'D') hab4 = true;
-    if (dato == 'd') {
-      hab4 = false;
-      estado4 = false;
-      last4 = HIGH;
+    for (int i = 0; i < 4; i++) {
+      if (dato == encender[i]) {
+        estado[i] = true;
+        enviarEstado(i);
+      }
+      if (dato == apagar[i]) {
+        estado[i] = false;
+        enviarEstado(i);
+      }
     }
   }
 
-  //  BOTONES (cada uno independiente)
-
-  bool b1 = digitalRead(btn1);
-  if (hab1 && last1 == HIGH && b1 == LOW) {
-    estado1 = !estado1;
+  //  BOTONES
+  for (int i = 0; i < 4; i++) {
+    leerBoton(i);
   }
-  last1 = b1;
 
-  bool b2 = digitalRead(btn2);
-  if (hab2 && last2 == HIGH && b2 == LOW) {
-    estado2 = !estado2;
+  //  SALIDA LEDs
+  for (int i = 0; i < 4; i++) {
+    digitalWrite(leds[i], estado[i]);
   }
-  last2 = b2;
-
-  bool b3 = digitalRead(btn3);
-  if (hab3 && last3 == HIGH && b3 == LOW) {
-    estado3 = !estado3;
-  }
-  last3 = b3;
-
-  bool b4 = digitalRead(btn4);
-  if (hab4 && last4 == HIGH && b4 == LOW) {
-    estado4 = !estado4;
-  }
-  last4 = b4;
-
-  // 🟢 SALIDA LEDs
-  digitalWrite(led1, estado1);
-  digitalWrite(led2, estado2);
-  digitalWrite(led3, estado3);
-  digitalWrite(led4, estado4);
 }
