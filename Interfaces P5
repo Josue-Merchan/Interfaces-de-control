@@ -30,7 +30,7 @@ float medirDistancia() {
 
 void setup() {
   Serial.begin(115200);
-  SerialBT.begin("ESP32_Distancia");
+  SerialBT.begin("ESP32_AUTO");
 
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
